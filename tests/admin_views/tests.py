@@ -1,4 +1,6 @@
 import datetime
+from django.contrib.admin.sites import AdminSite
+from django.test import RequestFactory 
 import os
 import re
 import unittest
@@ -5264,11 +5266,21 @@ class AdminViewListEditable(TestCase):
 
 @override_settings(ROOT_URLCONF="admin_views.urls")
 class AdminSearchTest(TestCase):
+    def test_search_inherited_model_and_iexact(self):
+        site = AdminSite()
+        class EmployeeAdmin(ModelAdmin):
+            search_fields = ["name__and_iexact"]
+        factory = RequestFactory()
+        request = factory.get("/admin/admin_views/employee/", {"q": "test"})
+        ma = EmployeeAdmin(Employee, site)
+        qs, use_distinct = ma.get_search_results(request, Employee.objects.all(), "test")
+        list(qs)
+
     @classmethod
     def setUpTestData(cls):
         cls.superuser = User.objects.create_superuser(
             username="super", password="secret", email="super@example.com"
-        )
+    )
         cls.joepublicuser = User.objects.create_user(
             username="joepublic", password="secret"
         )
